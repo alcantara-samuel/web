@@ -6,8 +6,10 @@ const controller = require('../controllers/aluno-controller');
 
 
 
+
 router.get('/', controller.get);
 router.get('/:id', controller.getById);
+router.post('/login', controller.postByLogin);
 router.post('/cadastro', controller.postByCadastro);
 router.put('/:id', controller.put);
 router.delete('/:id', controller.delete);

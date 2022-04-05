@@ -1,5 +1,7 @@
 'use strict';
 const conect = require('../database/index');
+const jwt = require("jsonwebtoken");
+require('dotenv').config();
 
 
 exports.get =async (req, res, next) => {
@@ -14,18 +16,33 @@ exports.getById = async (req, res,next) => {
 };
 
 exports.postByLogin =async (req, res, next) => {
+    const resultEmail = await conect.query('select * from alunos where email=' + `'${req.body.email}'`);
+    if(resultEmail.rows.length>0){
+        const id = 1;
+        let token = jwt.sign({id}, process.env.SECRET, {expiresIn: 300})
+        res.set("x-access-token", token);
+        return res.json({auth: true, token: token});
+    }else {
+        return res.json({mensagem: 'Usuário não encontrado'});
+    }
+};
 
-    const query  = ('select * from alunos where email= ?');
-    conect.query(query, {req,body,email});
+function verifyJWT (req, res, next) {
+    let token = req.headers['x-access-token'];
+    if (!token) {
+        return res.status(401).json({auth: false, mensagem: 'Sem token de verificação'});
+    }
 
-    if (error) {return res.status(500).send({ error: error})}
-
-
+    jwt.verify(token, process.env.SECRET, function (error, decoded) {
+        if (error) {
+            return res.status(500).json({mensagem: 'Token inválido'});
+        }
+        next();
+    });
 }
 
 
-
-exports.postByCadastro =async (req, res, next) => {
+exports.postByCadastro = verifyJWT ,async (req, res, next) => {
     const { nome, curso, email, senha } = req.body;
     const emailresult = await conect.query('select * from alunos where email=' + `'${req.body.email}'`);
     if(!emailresult.rows.length>0){
@@ -39,7 +56,7 @@ exports.postByCadastro =async (req, res, next) => {
   
 };
 
-exports.put =async (req, res, next) => {
+exports.put = verifyJWT, async (req, res, next) => {
     const n1 = req.params.id
     const { nome, curso, email, senha } = req.body;
     const db = await conect.query(`update alunos set nome='${nome}', curso='${curso}', email='${email}', senha='${senha}' where id =${n1};`);
@@ -49,7 +66,7 @@ exports.put =async (req, res, next) => {
     }))
 };
 
-exports.delete =async (req, res, next) => {
+exports.delete = verifyJWT, async (req, res, next) => {
     const n1 = req.params.id
     const db = await conect.query(`delete from alunos where id =${n1};`);
     return res.json(({
