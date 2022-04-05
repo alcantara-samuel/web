@@ -5,25 +5,33 @@ require('dotenv').config();
 
 
 exports.get =async (req, res, next) => {
-    const resultado = await conect.query('select * from alunos');
-    return res.json(resultado.rows)
+    try{
+        const alunos = await conect.query('select * from alunos');
+        return res.json(alunos.rows)
+    } catch(erro) {
+        res.json({mensagem: 'erro'});
+    }
 };
 
 exports.getById = async (req, res,next) => {
-    const num = req.params.id
-    const resultado = await conect.query('select * from alunos where id=' + num );
+    try{
+        const num = req.params.id
+        const resultado = await conect.query('select * from alunos where id=' + num );
     return res.json(resultado.rows)
+    } catch(erro) {
+        res.json({mensagem: 'erro'});
+    }
 };
 
 exports.postByLogin =async (req, res, next) => {
-    const resultEmail = await conect.query('select * from alunos where email=' + `'${req.body.email}'`);
-    if(resultEmail.rows.length>0){
+    const resultadoemail = await conect.query('select * from alunos where email=' + `'${req.body.email}'`);
+    if(resultadoemail.rows.length>0){
         const id = 1;
         let token = jwt.sign({id}, process.env.SECRET, {expiresIn: 300})
         res.set("x-access-token", token);
         return res.json({auth: true, token: token});
     }else {
-        return res.json({mensagem: 'Usuário não encontrado'});
+        return res.json({mensagem: 'Login inválido'});
     }
 };
 
@@ -39,7 +47,7 @@ function verifyJWT (req, res, next) {
         }
         next();
     });
-}
+};
 
 
 exports.postByCadastro = verifyJWT ,async (req, res, next) => {
